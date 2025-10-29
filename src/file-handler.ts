@@ -1,20 +1,24 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { TemplateEngine } from './template-engine';
-import { TemplateConfigManager } from './template-config';
-import { ProjectConfiguration } from './types';
+import * as fs from "fs";
+import * as path from "path";
+import { TemplateEngine } from "./template-engine";
+import { TemplateConfigManager } from "./template-config";
+import { ProjectConfiguration } from "./types";
 
 export class FileHandler {
   private templateEngine: TemplateEngine;
   private templateConfigManager: TemplateConfigManager | null = null;
   private templateDir: string;
 
-  constructor(templateDir: string = 'templates') {
+  constructor(templateDir?: string) {
     this.templateEngine = new TemplateEngine();
-    this.templateDir = templateDir;
+    // 运行在打包后的 dist 中，__dirname 指向 dist；../templates 指向包内 templates 目录
+    this.templateDir = templateDir ?? path.resolve(__dirname, "../templates");
   }
 
-  async createProject(config: ProjectConfiguration, outputDir: string): Promise<void> {
+  async createProject(
+    config: ProjectConfiguration,
+    outputDir: string
+  ): Promise<void> {
     // Set template variables and configuration
     this.templateEngine.setVariables(config);
     this.templateConfigManager = new TemplateConfigManager(config);
@@ -34,8 +38,14 @@ export class FileHandler {
     }
   }
 
-  private async processDirectory(sourceDir: string, targetDir: string, config: ProjectConfiguration): Promise<void> {
-    const entries = await fs.promises.readdir(sourceDir, { withFileTypes: true });
+  private async processDirectory(
+    sourceDir: string,
+    targetDir: string,
+    config: ProjectConfiguration
+  ): Promise<void> {
+    const entries = await fs.promises.readdir(sourceDir, {
+      withFileTypes: true,
+    });
 
     for (const entry of entries) {
       const sourcePath = path.join(sourceDir, entry.name);
@@ -60,11 +70,14 @@ export class FileHandler {
     }
   }
 
-  private shouldSkipDirectory(dirName: string, config: ProjectConfiguration): boolean {
+  private shouldSkipDirectory(
+    dirName: string,
+    config: ProjectConfiguration
+  ): boolean {
     if (!this.templateConfigManager) {
       // Fallback to original logic if config manager is not available
-      if (dirName === 'router' && !config.useRouter) return true;
-      if (dirName === 'stores' && !config.usePinia) return true;
+      if (dirName === "router" && !config.useRouter) return true;
+      if (dirName === "stores" && !config.usePinia) return true;
       return false;
     }
 
@@ -73,11 +86,16 @@ export class FileHandler {
     return !this.templateConfigManager.shouldIncludeDirectory(dirPath);
   }
 
-  private shouldSkipFile(fileName: string, config: ProjectConfiguration): boolean {
+  private shouldSkipFile(
+    fileName: string,
+    config: ProjectConfiguration
+  ): boolean {
     if (!this.templateConfigManager) {
       // Fallback to original logic if config manager is not available
-      if (fileName.endsWith('.scss') && config.cssPreprocessor !== 'scss') return true;
-      if (fileName.endsWith('.less') && config.cssPreprocessor !== 'less') return true;
+      if (fileName.endsWith(".scss") && config.cssPreprocessor !== "scss")
+        return true;
+      if (fileName.endsWith(".less") && config.cssPreprocessor !== "less")
+        return true;
       return false;
     }
 
@@ -85,11 +103,14 @@ export class FileHandler {
     return !this.templateConfigManager.shouldIncludeFile(fileName);
   }
 
-  private async processFile(sourcePath: string, targetPath: string): Promise<void> {
+  private async processFile(
+    sourcePath: string,
+    targetPath: string
+  ): Promise<void> {
     try {
-      const content = await fs.promises.readFile(sourcePath, 'utf-8');
+      const content = await fs.promises.readFile(sourcePath, "utf-8");
       const processedContent = this.templateEngine.processTemplate(content);
-      await fs.promises.writeFile(targetPath, processedContent, 'utf-8');
+      await fs.promises.writeFile(targetPath, processedContent, "utf-8");
     } catch (error) {
       throw new Error(`Failed to process file ${sourcePath}: ${error}`);
     }
@@ -136,10 +157,10 @@ export class FileHandler {
         build: "vue-tsc && vite build",
         preview: "vite preview",
         lint: "eslint . --ext vue,js,jsx,ts,tsx --fix",
-        format: "prettier --write src/"
+        format: "prettier --write src/",
       },
       dependencies: this.createDependencyObject(dependencies),
-      devDependencies: this.createDependencyObject(devDependencies)
+      devDependencies: this.createDependencyObject(devDependencies),
     };
 
     return JSON.stringify(packageJson, null, 2);
@@ -148,29 +169,29 @@ export class FileHandler {
   private createDependencyObject(deps: string[]): Record<string, string> {
     const versions: Record<string, string> = {
       // Dependencies
-      'vue': '^3.4.0',
-      'ant-design-vue': '^4.0.0',
-      'vue-router': '^4.2.0',
-      'pinia': '^2.1.0',
-      '@ant-design/icons-vue': '^7.0.0',
-      
+      vue: "^3.4.0",
+      "ant-design-vue": "^4.0.0",
+      "vue-router": "^4.2.0",
+      pinia: "^2.1.0",
+      "@ant-design/icons-vue": "^7.0.0",
+
       // Dev Dependencies
-      '@types/node': '^20.0.0',
-      '@typescript-eslint/eslint-plugin': '^6.0.0',
-      '@typescript-eslint/parser': '^6.0.0',
-      '@vitejs/plugin-vue': '^4.5.0',
-      'eslint': '^8.45.0',
-      'eslint-plugin-vue': '^9.17.0',
-      'prettier': '^3.0.0',
-      'typescript': '^5.2.0',
-      'vite': '^5.0.0',
-      'vue-tsc': '^1.8.0',
-      'sass': '^1.69.0',
-      'less': '^4.2.0'
+      "@types/node": "^20.0.0",
+      "@typescript-eslint/eslint-plugin": "^6.0.0",
+      "@typescript-eslint/parser": "^6.0.0",
+      "@vitejs/plugin-vue": "^4.5.0",
+      eslint: "^8.45.0",
+      "eslint-plugin-vue": "^9.17.0",
+      prettier: "^3.0.0",
+      typescript: "^5.2.0",
+      vite: "^5.0.0",
+      "vue-tsc": "^1.8.0",
+      sass: "^1.69.0",
+      less: "^4.2.0",
     };
 
     const result: Record<string, string> = {};
-    deps.forEach(dep => {
+    deps.forEach((dep) => {
       if (versions[dep]) {
         result[dep] = versions[dep];
       }
@@ -181,6 +202,6 @@ export class FileHandler {
 
   getActiveModules(config: ProjectConfiguration): string[] {
     const configManager = new TemplateConfigManager(config);
-    return configManager.getActiveModules().map(module => module.name);
+    return configManager.getActiveModules().map((module) => module.name);
   }
 }
